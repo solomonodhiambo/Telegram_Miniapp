@@ -326,4 +326,4 @@ def get_calendar():
         status_code=500,
         detail=str(error)
     )
-        )
+        
