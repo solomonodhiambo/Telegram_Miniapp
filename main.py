@@ -320,7 +320,7 @@ def get_calendar():
         }
 
     except Exception as error:
-    print(f"❌ CALENDAR API ERROR: {repr(error)}")
+        print(f"❌ CALENDAR API ERROR: {repr(error)}")
 
     raise HTTPException(
         status_code=500,
