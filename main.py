@@ -13,7 +13,7 @@ from fastapi.middleware.cors import CORSMiddleware
 app = FastAPI(
     title="Telegram Mini App API",
     version="1.0.0"
-
+)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
