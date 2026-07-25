@@ -279,7 +279,7 @@ def get_calendar():
 
                 continue
 
-        # Strict chronological ordering
+                # Strict chronological ordering
         normalized_events.sort(
             key=lambda event: datetime.fromisoformat(
                 event["scheduledTimestamp"]
@@ -296,7 +296,6 @@ def get_calendar():
             ][:10]
 
             if event_date not in grouped_by_date:
-
                 grouped_by_date[event_date] = []
 
             grouped_by_date[event_date].append(
@@ -308,28 +307,23 @@ def get_calendar():
                 "name": "EAT",
                 "utcOffset": "+03:00"
             },
-
             "generatedAt": datetime.now(
                 EAT
             ).isoformat(),
-
             "dates": [
                 {
                     "date": date,
                     "events": events
                 }
-
                 for date, events
                 in grouped_by_date.items()
             ]
         }
 
-        except Exception as error:
+    except Exception as error:
         print(f"❌ CALENDAR API ERROR: {repr(error)}")
-
         raise HTTPException(
             status_code=500,
             detail=str(error)
-        )
-
+            )
         
