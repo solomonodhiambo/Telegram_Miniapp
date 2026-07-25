@@ -137,6 +137,7 @@ async def fetch_calendar_with_cache():
 
 @app.get("/api/calendar")
 async def get_calendar():
+    return {"message": "Calendar endpoint under construction"}
 @app.get("/")
 def home():
     return {
