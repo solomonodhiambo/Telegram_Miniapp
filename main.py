@@ -60,7 +60,83 @@ SUPPORTED_CURRENCIES = {
 # ============================================================
 # HEALTH CHECK
 # ============================================================
+# ============================================================
+# FETCH CALENDAR WITH CACHE
+# ============================================================
 
+async def fetch_calendar_with_cache():
+
+    current_time = time.time()
+
+    # Return cached data if it is still valid
+    if (
+        CALENDAR_CACHE["data"] is not None
+        and (
+            current_time - CALENDAR_CACHE["timestamp"]
+        ) < CACHE_DURATION
+    ):
+        print("✅ Returning calendar from cache")
+        return CALENDAR_CACHE["data"]
+
+    print("🌐 Fetching fresh calendar data")
+
+    url = (
+        "https://nfs.faireconomy.media/"
+        "ff_calendar_thisweek.json"
+    )
+
+    try:
+
+        async with httpx.AsyncClient() as client:
+
+            response = await client.get(
+                url,
+                timeout=15.0
+            )
+
+            response.raise_for_status()
+
+            data = response.json()
+
+        # Save fresh data
+        CALENDAR_CACHE["data"] = data
+        CALENDAR_CACHE["timestamp"] = current_time
+
+        print("✅ Fresh calendar data cached")
+
+        return data
+
+    except Exception as error:
+
+        print(
+            f"⚠️ Upstream API failed: {repr(error)}"
+        )
+
+        # Return stale cache if available
+        if CALENDAR_CACHE["data"] is not None:
+
+            print(
+                "♻️ API down. "
+                "Falling back to stale cache data."
+            )
+
+            return CALENDAR_CACHE["data"]
+
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Calendar API unavailable "
+                "and no cache exists."
+            )
+        )
+
+
+# ============================================================
+# CALENDAR ENDPOINT
+# ============================================================
+
+@app.get("/api/calendar")
+async def get_calendar():
 @app.get("/")
 def home():
     return {
@@ -79,21 +155,78 @@ def test_api():
 # ============================================================
 
 def fetch_forexfactory_calendar():
-    response = requests.get(
-        FOREX_FACTORY_URL,
-        headers={
-            "User-Agent": (
-                "Mozilla/5.0 "
-                "(Windows NT 10.0; Win64; x64) "
-                "AppleWebKit/537.36"
+    current_time = time.time()
+
+    # --------------------------------------------------------
+    # 1. RETURN CACHE IF IT IS STILL VALID
+    # --------------------------------------------------------
+    if (
+        CALENDAR_CACHE["data"] is not None
+        and (current_time - CALENDAR_CACHE["timestamp"])
+        < CACHE_DURATION
+    ):
+        print("✅ Returning calendar from cache")
+        return CALENDAR_CACHE["data"]
+
+    # --------------------------------------------------------
+    # 2. FETCH FRESH DATA
+    # --------------------------------------------------------
+    print("🌐 Fetching fresh calendar data")
+
+    try:
+        response = requests.get(
+            FOREX_FACTORY_URL,
+            headers={
+                "User-Agent": (
+                    "Mozilla/5.0 "
+                    "(Windows NT 10.0; Win64; x64) "
+                    "AppleWebKit/537.36"
+                )
+            },
+            timeout=12
+        )
+
+        response.raise_for_status()
+
+        data = response.json()
+
+        # ----------------------------------------------------
+        # 3. SAVE FRESH DATA IN CACHE
+        # ----------------------------------------------------
+        CALENDAR_CACHE["data"] = data
+        CALENDAR_CACHE["timestamp"] = current_time
+
+        print("✅ Fresh calendar data cached")
+
+        return data
+
+    except Exception as error:
+
+        print(
+            f"⚠️ ForexFactory API failed: {repr(error)}"
+        )
+
+        # ----------------------------------------------------
+        # 4. FALLBACK TO OLD CACHE
+        # ----------------------------------------------------
+        if CALENDAR_CACHE["data"] is not None:
+
+            print(
+                "♻️ API failed. Returning stale cached data."
             )
-        },
-        timeout=12
-    )
 
-    response.raise_for_status()
+            return CALENDAR_CACHE["data"]
 
-    return response.json()
+        # ----------------------------------------------------
+        # 5. NO CACHE EXISTS
+        # ----------------------------------------------------
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Calendar API unavailable "
+                "and no cached data exists."
+            )
+        )
 
 
 # ============================================================
