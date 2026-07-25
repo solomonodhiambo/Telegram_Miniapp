@@ -55,7 +55,12 @@ def home():
         "status": "online",
         "service": "Telegram Mini App API"
     }
-
+@app.get("/api/test")
+def test_api():
+    return {
+        "status": "success",
+        "message": "Frontend can reach Railway API"
+    }
 
 # ============================================================
 # FETCH RAW FOREXFACTORY DATA
